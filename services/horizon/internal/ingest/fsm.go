@@ -765,6 +765,11 @@ func (v verifyRangeState) run(s *system) (transition, error) {
 			"ledger":   true,
 			"commit":   true,
 		}).Info("Processing ledger")
+
+		if sequence == 52885867 || sequence == 52885868 {
+			log.Error("We are in the problem zone.")
+		}
+
 		startTime := time.Now()
 
 		if err = s.historyQ.Begin(s.ctx); err != nil {
