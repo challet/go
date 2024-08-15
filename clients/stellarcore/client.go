@@ -389,18 +389,27 @@ func (c *Client) getResponse(req *http.Request) (*http.Response, error) {
 	return hresp, nil
 }
 
+// buildMultiKeyRequest is a workaround helper because, unfortunately,
+// url.Values does not support multiple keys via Set(), so we have to build our
+// URL parameters manually.
 func buildMultiKeyRequest(keys ...xdr.LedgerKey) (string, error) {
-	// Unfortunately, url.Values does not support multiple keys via Set(), so we
-	// have to build our URL parameters manually.
-	q := ""
+	// The average ledger key length, according to a simple
+	//
+	// SELECT AVG(LENGTH(HEX(key))) / 2 FROM ledger_entries;
+	//
+	// is ~57.6. We can use this to preallocate a final string buffer for
+	// performance.
+	q := strings.Builder{}
+	q.Grow(50 * len(keys))
+
 	for _, key := range keys {
 		keyB64, err := key.MarshalBinaryBase64()
 		if err != nil {
-			return q, errors.Wrapf(err, "failed to encode LedgerKey")
+			return q.String(), errors.Wrapf(err, "failed to encode LedgerKey")
 		}
-		q += "key=" + url.QueryEscape(keyB64) + "&"
+		q.WriteString("key=" + url.QueryEscape(keyB64) + "&")
 	}
 
-	q, _ = strings.CutSuffix(q, "&")
-	return q, nil
+	s, _ := strings.CutSuffix(q.String(), "&") // trim trailing &
+	return s, nil
 }

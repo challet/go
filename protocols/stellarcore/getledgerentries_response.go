@@ -26,5 +26,5 @@ type GetLedgerEntriesResponse struct {
 
 type LedgerEntryResponse struct {
 	Entry string `json:"e"`     // base64-encoded xdr.LedgerEntry
-	State string `json:"state"` // one of: "live" | "new_entry_no_proof" | "new_entry_proof" | "archived_no_proof" | "archived_proof"
+	State string `json:"state"` // one of the above State constants
 }
