@@ -1,6 +1,14 @@
 package stellarcore
 
 const (
+	// LiveState represents the state value returned by stellar-core when a
+	// ledger entry is live
+	LiveState = "live"
+
+	// DeadState represents the state value returned by stellar-core when a
+	// ledger entry is dead
+	DeadState = "dead"
+
 	// NewStateNoProof indicates the entry is new and does NOT require a proof
 	// of non-existence.
 	NewStateNoProof = "new_entry_no_proof"

@@ -82,47 +82,6 @@ func (c *Client) Upgrade(ctx context.Context, version int) (err error) {
 	return nil
 }
 
-// GetLedgerEntry submits a request to the stellar core instance to get the latest
-// state of a given ledger entry.
-func (c *Client) GetLedgerEntry(ctx context.Context, ledgerKey xdr.LedgerKey) (proto.GetLedgerEntryResponse, error) {
-	b64, err := xdr.MarshalBase64(ledgerKey)
-	if err != nil {
-		return proto.GetLedgerEntryResponse{}, errors.Wrap(err, "failed to marshal ledger key")
-	}
-	q := url.Values{}
-	q.Set("key", b64)
-
-	req, err := c.simpleGet(ctx, "getledgerentry", q)
-	if err != nil {
-		return proto.GetLedgerEntryResponse{}, errors.Wrap(err, "failed to create request")
-	}
-
-	hresp, err := c.http().Do(req)
-	if err != nil {
-		return proto.GetLedgerEntryResponse{}, errors.Wrap(err, "http request errored")
-	}
-	defer hresp.Body.Close()
-
-	if !(hresp.StatusCode >= 200 && hresp.StatusCode < 300) {
-		if drainReponse(hresp, false, &err) != nil {
-			return proto.GetLedgerEntryResponse{}, err
-		}
-		return proto.GetLedgerEntryResponse{}, errors.New("http request failed with non-200 status code")
-	}
-
-	responseBytes, err := io.ReadAll(hresp.Body)
-	if err != nil {
-		return proto.GetLedgerEntryResponse{}, errors.Wrap(err, "could not read response")
-	}
-
-	var response proto.GetLedgerEntryResponse
-	if err = json.Unmarshal(responseBytes, &response); err != nil {
-		return proto.GetLedgerEntryResponse{}, errors.Wrap(err, "json decode failed: "+string(responseBytes))
-	}
-
-	return response, nil
-}
-
 // Info calls the `info` command on the connected stellar core and returns the
 // provided response
 func (c *Client) Info(ctx context.Context) (resp *proto.InfoResponse, err error) {
@@ -198,14 +157,16 @@ func (c *Client) GetLedgerEntries(ctx context.Context, ledgerSeq uint32, keys ..
 	return resp, c.makeLedgerKeyRequest(ctx, resp, "getledgerentries", ledgerSeq, keys...)
 }
 
-func (c *Client) GetInvocationProof(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (*proto.ProofResponse, error) {
-	var resp *proto.ProofResponse
-	return resp, c.makeLedgerKeyRequest(ctx, resp, "getinvocationproof", ledgerSeq, keys...)
+//lint:ignore U1000 Ignore unused function until it's supported in Core
+func (c *Client) getInvocationProof(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (proto.ProofResponse, error) {
+	var resp proto.ProofResponse
+	return resp, c.makeLedgerKeyRequest(ctx, &resp, "getinvocationproof", ledgerSeq, keys...)
 }
 
-func (c *Client) GetRestorationProof(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (*proto.ProofResponse, error) {
-	var resp *proto.ProofResponse
-	return resp, c.makeLedgerKeyRequest(ctx, resp, "getrestorationproof", ledgerSeq, keys...)
+//lint:ignore U1000 Ignore unused function until it's supported in Core
+func (c *Client) getRestorationProof(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (proto.ProofResponse, error) {
+	var resp proto.ProofResponse
+	return resp, c.makeLedgerKeyRequest(ctx, &resp, "getrestorationproof", ledgerSeq, keys...)
 }
 
 // SubmitTransaction calls the `tx` command on the connected stellar core with the provided envelope
@@ -397,8 +358,8 @@ func buildMultiKeyRequest(keys ...xdr.LedgerKey) (string, error) {
 	//
 	// SELECT AVG(LENGTH(HEX(key))) / 2 FROM ledger_entries;
 	//
-	// is ~57.6. We can use this to preallocate a final string buffer for
-	// performance.
+	// on a pubnet RPC instance is ~57.6. We can use this to preallocate a
+	// string buffer for performance.
 	q := strings.Builder{}
 	q.Grow(50 * len(keys))
 
