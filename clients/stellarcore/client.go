@@ -150,22 +150,9 @@ func (c *Client) SetCursor(ctx context.Context, id string, cursor int32) (err er
 
 	return nil
 }
-
-func (c *Client) GetLedgerEntries(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (proto.GetLedgerEntriesResponse, error) {
-	var resp proto.GetLedgerEntriesResponse
-	return resp, c.makeLedgerKeyRequest(ctx, &resp, "getledgerentry", ledgerSeq, keys...)
-}
-
-//lint:ignore U1000 Ignore unused function until it's supported in Core
-func (c *Client) getInvocationProof(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (proto.ProofResponse, error) {
-	var resp proto.ProofResponse
-	return resp, c.makeLedgerKeyRequest(ctx, &resp, "getinvocationproof", ledgerSeq, keys...)
-}
-
-//lint:ignore U1000 Ignore unused function until it's supported in Core
-func (c *Client) getRestorationProof(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (proto.ProofResponse, error) {
-	var resp proto.ProofResponse
-	return resp, c.makeLedgerKeyRequest(ctx, &resp, "getrestorationproof", ledgerSeq, keys...)
+func (c *Client) GetLedgerEntryRaw(ctx context.Context, ledgerSeq uint32, keys ...xdr.LedgerKey) (proto.GetLedgerEntryRawResponse, error) {
+	var resp proto.GetLedgerEntryRawResponse
+	return resp, c.makeLedgerKeyRequest(ctx, &resp, "getledgerentryraw", ledgerSeq, keys...)
 }
 
 // SubmitTransaction calls the `tx` command on the connected stellar core with the provided envelope
@@ -333,7 +320,7 @@ func (c *Client) rawPost(
 }
 
 // makeLedgerKeyRequest is a generic method to perform a request in the form
-// `key=...&key=...&ledgerSeq=...` which is useful because three Stellar Core
+// `key=...&key=...&ledgerSeq=...` which is useful because several Stellar Core
 // endpoints all use this request format. Be sure to pass `target` by reference.
 func (c *Client) makeLedgerKeyRequest(
 	ctx context.Context,

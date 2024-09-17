@@ -84,22 +84,20 @@ func TestGetLedgerEntries(t *testing.T) {
 	c := &Client{HTTP: hmock, URL: "http://localhost:11626"}
 
 	// build a fake response body
-	mockResp := proto.GetLedgerEntriesResponse{
+	mockResp := proto.GetLedgerEntryRawResponse{
 		Ledger: 1215, // checkpoint align on expected request
-		Entries: []proto.LedgerEntryResponse{
+		Entries: []proto.RawLedgerEntryResponse{
 			{
 				Entry: "pretend this is XDR lol",
-				State: proto.DeadState,
 			},
 			{
 				Entry: "pretend this is another XDR lol",
-				State: proto.ArchivedStateNoProof,
 			},
 		},
 	}
 
 	// happy path - fetch an entry
-	hmock.On("POST", "http://localhost:11626/getledgerentry").
+	hmock.On("POST", "http://localhost:11626/getledgerentryraw").
 		ReturnJSON(http.StatusOK, &mockResp)
 
 	var key xdr.LedgerKey
@@ -107,12 +105,12 @@ func TestGetLedgerEntries(t *testing.T) {
 	require.NoError(t, err)
 	key.SetAccount(acc)
 
-	resp, err := c.GetLedgerEntries(context.Background(), 1234, key)
+	resp, err := c.GetLedgerEntryRaw(context.Background(), 1234, key)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
 	require.EqualValues(t, 1215, resp.Ledger)
 	require.Len(t, resp.Entries, 2)
-	require.Equal(t, resp.Entries[0].State, proto.DeadState)
-	require.Equal(t, resp.Entries[1].State, proto.ArchivedStateNoProof)
+	require.Equal(t, "pretend this is XDR lol", resp.Entries[0].Entry)
+	require.Equal(t, "pretend this is another XDR lol", resp.Entries[1].Entry)
 }
